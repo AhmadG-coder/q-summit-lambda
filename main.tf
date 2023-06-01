@@ -137,14 +137,28 @@ resource "aws_apigatewayv2_integration" "my_integration" {
 
 }
 
+resource "aws_apigatewayv2_integration" "get_integration" {
+  api_id             = aws_apigatewayv2_api.my_api.id
+  integration_type   = "AWS_PROXY"
+  integration_uri    = aws_lambda_function.my_lambda.invoke_arn
+  passthrough_behavior = "WHEN_NO_MATCH"
+
+}
+
 
 resource "aws_apigatewayv2_route" "my_route" {
   api_id    = aws_apigatewayv2_api.my_api.id
   route_key = "POST /"
 
-  target = "integrations/${aws_apigatewayv2_integration.my_integration.id}"
+  target = "integrations/${aws_apigatewayv2_integration.get_integration.id}"
 }
 
+resource "aws_apigatewayv2_route" "get_route" {
+  api_id    = aws_apigatewayv2_api.my_api.id
+  route_key = "GET /"
+
+  target = "integrations/${aws_apigatewayv2_integration.my_integration.id}"
+}
 resource "aws_apigatewayv2_stage" "my_stage" {
   api_id      = aws_apigatewayv2_api.my_api.id
   name        = "prod"
