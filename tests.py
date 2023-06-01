@@ -1,26 +1,114 @@
-import json
+import boto3
 
 import pytest as pytest
+from lambda_function import lambda_handler, validate_input, DynamoDBManager
+from unittest import mock
 
-from lambda_function import lambda_handler, validate_input
-from mockito import mock, when, verify
-from botocore.exceptions import ClientError
+import json
+import unittest
+from unittest.mock import MagicMock
 
-class TestLambdaHandler:
-    def test_valid_input(self):
+
+class TestLambdaHandlerDlete(unittest.TestCase):
+
+    def test_delete_item_success(self):
+        # Mock the event and context objects for the DELETE request
+        event = {
+            "httpMethod": "DELETE",
+            "body": json.dumps({"item": "example_item"})
+        }
+        # context = MagicMock()
+
+        # Call the lambda_handler function
+        response = lambda_handler(event, {})
+
+        # Verify the response
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(response["body"], "Item deleted from DynamoDB")
+
+    def test_delete_item_invalid_name(self):
+        # Mock the event and context objects for the DELETE request with an invalid item name
+        event = {
+            "httpMethod": "DELETE",
+            "body": json.dumps({"item": 123})  # Invalid item name, should be a string
+        }
+        context = MagicMock()
+
+        # Call the lambda_handler function
+        response = lambda_handler(event, context)
+
+        # Verify the response
+        self.assertEqual(response["statusCode"], 400)
+        self.assertEqual(response["body"], "Invalid item name provided")
+
+    def test_delete_item_no_body(self):
+        # Mock the event and context objects for the DELETE request with no body
+        event = {
+            "httpMethod": "DELETE"
+        }
+        context = MagicMock()
+
+        # Call the lambda_handler function
+        response = lambda_handler(event, context)
+
+        # Verify the response
+        self.assertEqual(response["statusCode"], 400)
+        self.assertEqual(response["body"], "No body found in the request")
+
+    def test_delete_item_invalid_payload(self):
+        # Mock the event and context objects for the DELETE request with an invalid JSON payload
+        event = {
+            "httpMethod": "DELETE",
+            "body": "invalid_json_payload"
+        }
+        context = MagicMock()
+
+        # Call the lambda_handler function
+        response = lambda_handler(event, context)
+
+        # Verify the response
+        self.assertEqual(response["statusCode"], 400)
+        self.assertEqual(response["body"], "Invalid JSON payload")
+
+
+if __name__ == '__main__':
+    unittest.main()
+
+
+class TestLambdaHandler(object):
+
+    @pytest.fixture(autouse=True)
+    def setUp(self):
+        dynamodb = boto3.resource('dynamodb')
+        self.table = dynamodb.Table('my-dynamodb-table')
+        yield
+
+    @pytest.mark.parametrize('item', [f"task{x}" for x in range(10)])
+    def test_valid_input(self, item):
         event = {
             "httpMethod": "POST",
-            "body": json.dumps({"item": "task_name"})
+            "body": json.dumps(item)
         }
+        dynamodb_manager = DynamoDBManager('my-dynamodb-table')
 
-        dynamodb_client_mock = mock()
-        when(dynamodb_client_mock).put_item(TableName="my-dynamodb-table", Item={"name": {"S": "task_name"}}).thenReturn(None)
+        with mock.patch.object(dynamodb_manager.table, 'put_item') as mock_put_item:
+            # Configure the return value of the mocked method
+            mock_put_item.return_value = {'ResponseMetadata': {'HTTPStatusCode': 200}}
+            # Call the put_item method
+            response = dynamodb_manager.add_item(event["body"])
+            assert response[0] == 'Item added to DynamoDB table:' and response[1] == json.dumps(item)
+            # Check the response
 
-        response = lambda_handler(event, {})
-        assert response['statusCode'] == 200
-        assert response['body'] == 'Item added to DynamoDB table'
 
-        verify(dynamodb_client_mock).put_item(TableName="my-dynamodb-table", Item={"name": {"S": "task_name"}})
+    def test_get_valid_input(self):
+        dynamodb_manager = DynamoDBManager('my-dynamodb-table')
+
+        with mock.patch.object(dynamodb_manager.table, 'scan') as mock_put_item:
+            # Configure the return value of the mocked method
+            mock_put_item.return_value = {'Items': [{'name': '{"item": "task0"}'}, {'name': 'task0'}, {'name': 'ane1m'}, {'name': 'anem'}], 'Count': 4, 'ScannedCount': 4, 'ResponseMetadata': {'HTTPStatusCode': 200}}
+            response = dynamodb_manager.list_items()
+            assert response == '{"item": "task0"}\ntask0\nane1m\nanem\n'
+        # Check the response
 
     def test_invalid_input(self):
         event = {
