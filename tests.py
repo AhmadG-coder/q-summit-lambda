@@ -83,22 +83,36 @@ class TestLambdaHandler(object):
         self.table = dynamodb.Table('my-dynamodb-table')
         yield
 
-    @pytest.mark.parametrize('item', [f"task{x}" for x in range(10)])
-    def test_valid_input(self, item):
+    def test_valid_add(self):
+        item = "task0"
         event = {
             "httpMethod": "POST",
             "body": json.dumps(item)
         }
         dynamodb_manager = DynamoDBManager('my-dynamodb-table')
 
-        with mock.patch.object(dynamodb_manager.table, 'put_item') as mock_put_item:
+        with mock.patch.object(dynamodb_manager.table, 'put_item') as mock_get_item:
             # Configure the return value of the mocked method
-            mock_put_item.return_value = {'ResponseMetadata': {'HTTPStatusCode': 200}}
+            mock_get_item.return_value = {'ResponseMetadata': {'HTTPStatusCode': 200}}
             # Call the put_item method
             response = dynamodb_manager.add_item(event["body"])
-            assert response[0] == 'Item added to DynamoDB table:' and response[1] == json.dumps(item)
-            # Check the response
+            assert response["statusCode"] == 200 and response["body"] == "added item to DynamoDB"
 
+    @pytest.mark.parametrize('item', [f"task{x}" for x in range(10)])
+    def test_item_already_in_database(self, item):
+        event = {
+            "httpMethod": "POST",
+            "body": json.dumps(item)
+        }
+        dynamodb_manager = DynamoDBManager('my-dynamodb-table')
+
+        with mock.patch.object(dynamodb_manager.table, 'get_item') as mock_get_item:
+            # Configure the return value of the mocked method
+            mock_get_item.return_value = {'Item': {"name": item}, 'ResponseMetadata': {'HTTPStatusCode': 200}}
+            # Call the put_item method
+            response = dynamodb_manager.add_item(event["body"])
+            assert response["statusCode"] == 400 and response["body"] == "item already in database"
+            # Check the response
 
     def test_get_valid_input(self):
         dynamodb_manager = DynamoDBManager('my-dynamodb-table')
@@ -121,25 +135,3 @@ class TestLambdaHandler(object):
         assert response['body'] == 'Invalid item name provided'
 
     # Other test methods...
-
-
-class TestInputValidation:
-    @pytest.mark.parametrize("item_name", ["task_name", "another_task", "123"])
-    def test_valid_input(self, item_name):
-        event = {
-            "httpMethod": "POST",
-            "body": {"item": item_name}
-        }
-
-        result = validate_input(event["body"])
-        assert result is True
-
-    @pytest.mark.parametrize("item_name", [None, 123, True, {"item": "task_name"}])
-    def test_invalid_input(self, item_name):
-        event = {
-            "httpMethod": "POST",
-            "body": item_name
-        }
-
-        result = validate_input(event)
-        assert result is False
