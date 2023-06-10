@@ -29,18 +29,16 @@ class DynamoDBManager:
         response = self.table.put_item(Item=item_data)["ResponseMetadata"]["HTTPStatusCode"]
         if response == 200:
             body = "added item to DynamoDB"
-        elif response == 400:
-            body = "item already in database"
         return compose_return(status_code=response, message=body)
 
     def delete_item(self, item):
         # Convert the item to a string if needed
-        item_name = str(item)
+        item_name = str(item.replace('\"', ""))
 
         # Delete the item from DynamoDB
         response = self.table.delete_item(Key={'name': item_name})
 
-        return response["ResponseMetaData"]["HTTPStatusCode"]
+        return response["ResponseMetadata"]["HTTPStatusCode"]
 
     def list_items(self):
         response = self.table.scan()
