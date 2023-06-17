@@ -16,7 +16,7 @@ This repository contains the resources for the Mocking in Software Development w
 - Terraform: for Deploying the lambda
 - Python: for running the unit-tests
 
-##Setup Instructions
+## Setup Instructions
 ```
 terraform init
 Terraform apply
