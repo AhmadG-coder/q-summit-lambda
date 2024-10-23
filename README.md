@@ -1,10 +1,10 @@
 # Workshop Resources
 
-This repository contains the resources for the Mocking in Software Development workshop.
+This repository contains the resources for the Mocking in Software Development workshop and DevOps.
 
 ## Slides
 
-- [Link to Slides](https://docs.google.com/presentation/d/e/2PACX-1vQuRqoUkwFirJ_6nFCGVyGiMrm2aAJm80qsiQNrQgLLarY-7PNs4LUCX2V1DC-fAnl9eSe7_G7gAd34/pub?start=false&loop=false&delayms=3000)
+- [Link to Slides](https://docs.google.com/presentation/d/1x1xGOwn79n8iACELSSIuXbmP5oxBfys5/edit#slide=id.g30bc8e4984e_0_26)
 
 ## Code Examples
 
