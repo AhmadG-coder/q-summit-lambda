@@ -29,6 +29,9 @@ pytest tests.py
 - [Pytest](https://docs.pytest.org/en/7.3.x/)
 - [Mock Object](https://docs.python.org/3/library/unittest.mock.html)
 - [Mocking best-practices](https://www.telerik.com/blogs/mocking-best-practices)
+- [Jenkins](https://www.jenkins.io/)
+- [Terraform](https://www.terraform.io/)
+- [Docker](https://docs.docker.com/get-started/)
 
 ## License
 
